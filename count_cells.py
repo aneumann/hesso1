@@ -8,7 +8,12 @@ import numpy as np
 import pylab
 import mahotas as mh
 import matplotlib.pyplot as plt
-
+from skimage import data, color
+from skimage.transform import hough_circle
+from skimage.feature import peak_local_max
+from skimage.draw import circle_perimeter
+from skimage.util import img_as_ubyte
+from skimage.filter import canny
 
 # helper functions
 # array loop
@@ -31,8 +36,24 @@ def closing_element(element_size):
     element = np.delete(t1, element_size / 2, 1)
     return element
 
+# hough
+def fuck_hough(image):
+    edges = canny(img_closed)
+
+    hough_radius = np.arange(160, 361, 15)
+    hough_res = hough_circle(edges, hough_radius)
+    centers = []
+    accums = []
+    radii = []
+    for radius, h in zip(hough_radius, hough_res):
+        num_peaks = 5
+        peaks = peak_local_max(h, num_peaks=num_peaks)
+        centers.extend(peaks)
+        print peaks
+    return edges
+
 # load img
-working_dir = "C:/project_image_processing/steady_state/131015_zoom1.7/"
+working_dir = '/Users/alexander_neumann/Desktop/bioinf/steady_state/131015_zoom1.7/'
 img_dir = working_dir + 'Series006_z0_ch00.tif'
 img = mh.imread(img_dir)
 
@@ -50,30 +71,13 @@ img_distance = mh.distance(img_cut)
 closing_size = closing_element(9)
 img_closed = mh.close(img_distance > 5, Bc=closing_size)
 
-# skeleton transform
-img_dist = mh.distance(img_closed)
-img_dist = mh.gaussian_filter(img_dist, 8)
-img_dist = img_dist.astype(int)
-
-labels_dist, nr_objects = mh.label(img_dist)
-
-centers = mh.center_of_mass(img_dist, labels_dist)
-
-print type(centers)
-# find max values, seeds
-rmax = mh.regmax(img_dist)
+img_hough = fuck_hough(img_closed)
 
 # show original vs processed
-img_processed = img_closed
-
+img_processed = img_hough
 pylab.gray()
-plt.subplot(2, 2, 1)
-plt.imshow(img)
-plt.subplot(2, 2, 2)
+plt.subplot(1, 2, 1)
+plt.imshow(img_closed)
+plt.subplot(1, 2, 2)
 plt.imshow(img_processed)
-plt.subplot(2, 2, 3)
-plt.imshow(img_dist)
-plt.subplot(2, 2, 4)
-#pylab.imshow(mh.overlay(img_dist, labels_dist))
-pylab.imshow(centers)
 pylab.show()
