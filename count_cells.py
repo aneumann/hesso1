@@ -56,10 +56,41 @@ img_dist = mh.gaussian_filter(img_dist, 8)
 img_dist = img_dist.astype(int)
 
 labels_dist, nr_objects = mh.label(img_dist)
+np.set_printoptions(threshold='nan')
+#print labels_dist
 
-centers = mh.center_of_mass(img_dist, labels_dist)
+sizes =  mh.labeled.labeled_size(labels_dist)
+too_small_nuclei = np.where(sizes <900)
+labels_dist_new = mh.labeled.remove_regions(labels_dist, too_small_nuclei)
 
-print type(centers)
+whole = mh.segmentation.gvoronoi(labels_dist)
+# count nuclei with a certain area threshold of 900
+hist, bin_edges = np.histogram(labels_dist, bins=256)
+#count_nuclei = hist[hist!=0]
+#count_nuclei = np.delete(count_nuclei,0)
+# area threshold
+#too_small_nuclei = np.where(count_nuclei<900)
+#count_nuclei = count_nuclei[(count_nuclei>900)]
+
+# clean labels_dist image from too_small_nuclei
+#masked = np.ma.masked_less(count_nuclei, 900)
+#print masked
+#print labels_dist
+#labels_dist_old = np.copy(labels_dist)
+
+#for idx in range(len(too_small_nuclei[0])):
+#    #labels_dist_new =
+#   #np.where(labels_dist == too_small_nuclei[0][idx])
+#
+#    labels_dist[labels_dist == too_small_nuclei[0][idx]] = 0
+
+
+# centers of mass, find the middle of the cell areas
+centers=mh.center_of_mass(img_dist, labels_dist)
+print centers
+
+#print type(centers)
+#print centers
 # find max values, seeds
 rmax = mh.regmax(img_dist)
 
@@ -70,10 +101,10 @@ pylab.gray()
 plt.subplot(2, 2, 1)
 plt.imshow(img)
 plt.subplot(2, 2, 2)
-plt.imshow(img_processed)
+pylab.imshow(labels_dist)
 plt.subplot(2, 2, 3)
-plt.imshow(img_dist)
+pylab.imshow(whole)
 plt.subplot(2, 2, 4)
 #pylab.imshow(mh.overlay(img_dist, labels_dist))
-pylab.imshow(centers)
+pylab.imshow(labels_dist_new)
 pylab.show()
