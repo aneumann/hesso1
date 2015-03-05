@@ -63,9 +63,39 @@ sizes =  mh.labeled.labeled_size(labels_dist)
 too_small_nuclei = np.where(sizes <900)
 labels_dist_new = mh.labeled.remove_regions(labels_dist, too_small_nuclei)
 
+# voronoi segmentation
 whole = mh.segmentation.gvoronoi(labels_dist)
+
+# fnd background
+background = mh.median_filter(img, Bc=np.ones((5,)*len(img.shape), img.dtype))
+background = img < 3
+background = mh.median_filter(background, Bc=np.ones((5,)*len(img.shape), img.dtype))
+background = mh.median_filter(background, Bc=np.ones((5,)*len(img.shape), img.dtype))
+
+background_label, nr_objects_two = mh.label(background)
+sizes_background =  mh.labeled.labeled_size(background_label)
+background_big = np.where(sizes_background < 2000)
+background_label_new = mh.labeled.remove_regions(background_label, background_big)
+background_label[background_label>255] = 250
+background_label_new[background_label_new>255] = 250
+
+background_label_new  = mh.close_holes(background_label_new, Bc=np.ones((5,)*len(img.shape), img.dtype))
+background_watershed = 
+
+print nr_objects_two
+#print background_label
+
+#background = mh.close(background,Bc=np.ones((3,)*len(img.shape), img.dtype))
+#background = mh.distance(background)
+#background = np.floor(background)
+#print background
+#background = mh.dilate(background,Bc=np.ones((13,)*len(img.shape), img.dtype))
+
+######################################################################
+
+#not needed anymore
 # count nuclei with a certain area threshold of 900
-hist, bin_edges = np.histogram(labels_dist, bins=256)
+#hist, bin_edges = np.histogram(labels_dist, bins=256)
 #count_nuclei = hist[hist!=0]
 #count_nuclei = np.delete(count_nuclei,0)
 # area threshold
@@ -84,10 +114,12 @@ hist, bin_edges = np.histogram(labels_dist, bins=256)
 #
 #    labels_dist[labels_dist == too_small_nuclei[0][idx]] = 0
 
+###########################################################################
+
+
 
 # centers of mass, find the middle of the cell areas
 centers=mh.center_of_mass(img_dist, labels_dist)
-print centers
 
 #print type(centers)
 #print centers
@@ -99,12 +131,12 @@ img_processed = img_closed
 
 pylab.gray()
 plt.subplot(2, 2, 1)
-plt.imshow(img)
+plt.imshow(background_label_new)
 plt.subplot(2, 2, 2)
 pylab.imshow(labels_dist)
 plt.subplot(2, 2, 3)
-pylab.imshow(whole)
+pylab.imshow(background_label)
 plt.subplot(2, 2, 4)
-#pylab.imshow(mh.overlay(img_dist, labels_dist))
-pylab.imshow(labels_dist_new)
+pylab.imshow(mh.overlay(background_label_new,labels_dist))
+#pylab.imshow(background)
 pylab.show()
