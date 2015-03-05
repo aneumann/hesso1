@@ -8,6 +8,8 @@ import numpy as np
 import pylab
 import mahotas as mh
 import matplotlib.pyplot as plt
+from skimage.draw import circle
+
 
 
 # helper functions
@@ -33,7 +35,7 @@ def closing_element(element_size):
 
 # load img
 working_dir = "C:/project_image_processing/steady_state/131015_zoom1.7/"
-img_dir = working_dir + 'Series006_z0_ch00.tif'
+img_dir = working_dir + 'Series011_z0_ch00.tif'
 img = mh.imread(img_dir)
 
 # median filter
@@ -70,30 +72,70 @@ whole = mh.segmentation.gvoronoi(labels_dist)
 background = mh.median_filter(img, Bc=np.ones((5,)*len(img.shape), img.dtype))
 background = img < 3
 background = mh.median_filter(background, Bc=np.ones((5,)*len(img.shape), img.dtype))
-background = mh.median_filter(background, Bc=np.ones((5,)*len(img.shape), img.dtype))
+background = mh.median_filter(background, Bc=np.ones((25,)*len(img.shape), img.dtype))
+background = mh.open(background, Bc=np.ones((50,)*len(img.shape), img.dtype))
 
 background_label, nr_objects_two = mh.label(background)
 sizes_background =  mh.labeled.labeled_size(background_label)
 background_big = np.where(sizes_background < 2000)
 background_label_new = mh.labeled.remove_regions(background_label, background_big)
-background_label[background_label>255] = 250
-background_label_new[background_label_new>255] = 250
 
-background_label_new  = mh.close_holes(background_label_new, Bc=np.ones((5,)*len(img.shape), img.dtype))
-background_watershed = 
+# close holes
+#background_label_new = mh.close_holes(background_label_new, Bc=np.ones((5,)*len(img.shape), img.dtype))
+# opening
+#background_label_new = mh.open(background_label_new, Bc=np.ones((10,)*len(img.shape), img.dtype))
 
-print nr_objects_two
-#print background_label
+center_of_mass_background = mh.center_of_mass(background_label_new, background_label_new)
 
-#background = mh.close(background,Bc=np.ones((3,)*len(img.shape), img.dtype))
-#background = mh.distance(background)
-#background = np.floor(background)
-#print background
-#background = mh.dilate(background,Bc=np.ones((13,)*len(img.shape), img.dtype))
+#points = np.zeros(img.shape, dtype=img.dtype)
+#for coord in center_of_mass:
+#    rr, cc = circle(coord[0], coord[1], 5)
+#    points[rr, cc] = 255
+
+# centers of mass, find the middle of the cell areas
+centers=mh.center_of_mass(img_dist, labels_dist_new)
+centers = centers[~np.isnan(centers).any(1)]
+
+# voronoi background and nuclei
+labels_whole = labels_dist_new + background_label_new
+labels_whole[labels_whole>0] = 255
+labels_whole, nr_objects_whole = mh.label(labels_whole)
+
+voronoi_whole = mh.segmentation.gvoronoi(labels_whole)
+
+
+# save images
+save_dir = working_dir + 'voronoi_2.tif'
+mh.imsave(save_dir, voronoi_whole)
+
+save_dir = working_dir + 'nucleus_2.tif'
+mh.imsave(save_dir, labels_dist_new)
+
+
+pylab.gray()
+plt.subplot(2, 2, 1)
+plt.imshow(background)
+plt.subplot(2, 2, 2)
+pylab.imshow(labels_dist_new)
+plt.subplot(2, 2, 3)
+pylab.imshow(background_label_new > 0)
+plt.subplot(2, 2, 4)
+pylab.imshow(mh.overlay(voronoi_whole*25,labels_dist_new))
+#pylab.imshow(points)
+pylab.show()
+
+
+
+
 
 ######################################################################
 
 #not needed anymore
+
+# find edges
+#edges = filter.sobel(background_label_new)
+
+
 # count nuclei with a certain area threshold of 900
 #hist, bin_edges = np.histogram(labels_dist, bins=256)
 #count_nuclei = hist[hist!=0]
@@ -115,28 +157,3 @@ print nr_objects_two
 #    labels_dist[labels_dist == too_small_nuclei[0][idx]] = 0
 
 ###########################################################################
-
-
-
-# centers of mass, find the middle of the cell areas
-centers=mh.center_of_mass(img_dist, labels_dist)
-
-#print type(centers)
-#print centers
-# find max values, seeds
-rmax = mh.regmax(img_dist)
-
-# show original vs processed
-img_processed = img_closed
-
-pylab.gray()
-plt.subplot(2, 2, 1)
-plt.imshow(background_label_new)
-plt.subplot(2, 2, 2)
-pylab.imshow(labels_dist)
-plt.subplot(2, 2, 3)
-pylab.imshow(background_label)
-plt.subplot(2, 2, 4)
-pylab.imshow(mh.overlay(background_label_new,labels_dist))
-#pylab.imshow(background)
-pylab.show()
