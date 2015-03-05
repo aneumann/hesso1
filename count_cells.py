@@ -71,10 +71,21 @@ img_distance = mh.distance(img_cut)
 closing_size = closing_element(9)
 img_closed = mh.close(img_distance > 5, Bc=closing_size)
 
-img_hough = fuck_hough(img_closed)
+# skeleton transform
+img_dist = mh.distance(img_closed)
+img_dist = mh.gaussian_filter(img_dist, 8)
+img_dist = img_dist.astype(int)
+
+labels_dist, nr_objects = mh.label(img_dist)
+
+centers = mh.center_of_mass(img_dist, labels_dist)
+
+print type(centers)
+# find max values, seeds
+rmax = mh.regmax(img_dist)
 
 # show original vs processed
-img_processed = img_hough
+img_processed = img_closed
 pylab.gray()
 plt.subplot(1, 2, 1)
 plt.imshow(img_closed)
